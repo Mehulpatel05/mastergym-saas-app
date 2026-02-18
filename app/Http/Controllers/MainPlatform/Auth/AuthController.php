@@ -1,0 +1,53 @@
+<?php
+
+namespace App\Http\Controllers\MainPlatform\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+
+class AuthController extends Controller
+{
+
+    public function AuthPage()
+    {
+        return Inertia::render("auth/central_page/Auth_page");
+    }
+
+    public function Authenticable(Request $request)
+    {
+        $request->validate([
+            "email" => "required|email",
+            "password" => "required"
+        ]);
+
+        $formRequest = $request->all();
+
+        $authenticationAttemp = Auth::guard("central-web")->attempt([
+            "email" => $formRequest["email"],
+            "password" => $formRequest["password"]
+        ]);
+
+        if ($authenticationAttemp) {
+            $request->session()->regenerate();
+
+            return to_route("central-dashboard.main");
+        }
+
+        return redirect()->back()->withErrors([
+            "message" => "Credentials is incorrect"
+        ]);
+    }
+
+    public function Logout(Request $request)
+    {
+        Auth::guard("central-web")->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        return to_route("login");
+    }
+}
